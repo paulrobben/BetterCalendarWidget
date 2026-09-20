@@ -28,6 +28,9 @@ struct WeekdayHeaderView: View {
 
 /// A run of whole weeks laid out as rows of seven days, with a titled bar for
 /// each event. A month and a four-week span differ only in the grid handed in.
+///
+/// Each week is laid out as a whole rather than day by day, so an event
+/// covering several days draws as one bar stretched across them.
 struct CalendarGridView: View {
     let grid: CalendarGrid
     let eventsByDay: [Date: [DayEvent]]
@@ -38,28 +41,31 @@ struct CalendarGridView: View {
     /// ever calls this from a swipe, so widgets leave it at its default.
     var onPeriodChange: (Int) -> Void = { _ in }
 
-    /// The height of every row. Days cap their bars to fit it, so the grid is
+    /// The height of every row. Weeks cap their bars to fit it, so the grid is
     /// always exactly `weekCount * rowHeight` tall.
     let rowHeight: CGFloat
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
-
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 0) {
-            ForEach(grid.days, id: \.self) { day in
-                DayCell(
-                    day: day,
-                    calendar: grid.calendar,
-                    isDimmed: grid.isDimmed(day),
-                    isSelected: grid.calendar.isDate(day, inSameDayAs: selectedDay),
-                    events: eventsByDay[day] ?? [],
-                    rowHeight: rowHeight
+        VStack(spacing: 0) {
+            ForEach(weeks) { week in
+                WeekRow(
+                    days: week.days,
+                    grid: grid,
+                    eventsByDay: eventsByDay,
+                    selectedDay: selectedDay,
+                    rowHeight: rowHeight,
+                    onSelect: { day in select(day) }
                 )
-                .contentShape(.rect)
-                .onTapGesture { select(day) }
             }
         }
         .gesture(periodSwipe)
+    }
+
+    /// The grid's days split into rows of seven.
+    private var weeks: [Week] {
+        stride(from: 0, to: grid.days.count, by: 7).map { start in
+            Week(index: start / 7, days: Array(grid.days[start..<min(start + 7, grid.days.count)]))
+        }
     }
 
     private var periodSwipe: some Gesture {
@@ -79,20 +85,24 @@ struct CalendarGridView: View {
     }
 }
 
-/// One day in the grid: its number, then as many titled event bars as the row
-/// height allows. Anything that doesn't fit collapses into a `+n` marker, so a
-/// busy day can't stretch the row.
-private struct DayCell: View {
-    let day: Date
-    let calendar: Calendar
-    /// True for a day the grid shows only as padding, such as a neighbouring
-    /// month's days filling out a month's first and last rows.
-    let isDimmed: Bool
-    let isSelected: Bool
-    let events: [DayEvent]
+/// One row of the grid: seven days, and its position down the grid.
+private struct Week: Identifiable {
+    let index: Int
+    let days: [Date]
 
-    /// The height the row gives this cell, which decides how many bars fit.
+    var id: Int { index }
+}
+
+/// One week: a row of day numbers, and under it the week's events packed into
+/// lanes. An event holds the same lane across every day it covers, which is
+/// what lets a multi-day bar run straight across the row.
+private struct WeekRow: View {
+    let days: [Date]
+    let grid: CalendarGrid
+    let eventsByDay: [Date: [DayEvent]]
+    let selectedDay: Date
     let rowHeight: CGFloat
+    let onSelect: (Date) -> Void
 
     @ScaledMetric(relativeTo: .caption2) private var barHeight: CGFloat = 13
     @ScaledMetric(relativeTo: .caption) private var numberDiameter: CGFloat = 22
@@ -100,27 +110,85 @@ private struct DayCell: View {
     private static let barSpacing: CGFloat = 1.5
     private static let contentSpacing: CGFloat = 2
     private static let verticalPadding: CGFloat = 2
-
-    private var isToday: Bool { calendar.isDateInToday(day) }
+    /// Keeps neighbouring bars apart, and a bar off the row's edges.
+    private static let barInset: CGFloat = 1.5
 
     var body: some View {
-        VStack(spacing: Self.contentSpacing) {
-            dayNumber
-            eventBars
+        // Packed once here: both the numbers, for their overflow counts, and
+        // the bars are laid out from the same lanes.
+        let segments = WeekEventSegment.pack(days: days, eventsByDay: eventsByDay)
+
+        ZStack(alignment: .top) {
+            // Behind the content, so a tap anywhere in a column selects that
+            // day — including the empty space a short day leaves.
+            dayColumns
+
+            VStack(spacing: Self.contentSpacing) {
+                numbers(segments)
+                bars(segments)
+            }
+            .padding(.vertical, Self.verticalPadding)
+            // Taps belong to the columns underneath, so a tap on a bar still
+            // selects the day it sits on.
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
         }
-        .opacity(isDimmed ? 0.4 : 1)
-        .padding(.horizontal, 1.5)
-        .padding(.vertical, Self.verticalPadding)
-        // maxHeight fills the row, which LazyVGrid sizes to its tallest day.
-        // Without it the grid centres shorter cells and the day numbers in a
-        // row no longer line up.
-        .frame(maxWidth: .infinity, minHeight: rowHeight, maxHeight: .infinity, alignment: .top)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .frame(height: rowHeight)
     }
 
-    /// How many bars fit once the day number has taken its share of the row.
+    private var dayColumns: some View {
+        HStack(spacing: 0) {
+            ForEach(days, id: \.self) { day in
+                Color.clear
+                    .contentShape(.rect)
+                    .onTapGesture { onSelect(day) }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(accessibilityLabel(for: day))
+                    .accessibilityAddTraits(isSelected(day) ? [.isButton, .isSelected] : .isButton)
+            }
+        }
+    }
+
+    private func numbers(_ segments: [WeekEventSegment]) -> some View {
+        HStack(spacing: 0) {
+            ForEach(Array(days.enumerated()), id: \.offset) { column, day in
+                DayNumber(
+                    day: day,
+                    isToday: grid.calendar.isDateInToday(day),
+                    isSelected: isSelected(day),
+                    hiddenCount: hiddenCount(inColumn: column, of: segments),
+                    diameter: numberDiameter
+                )
+                .opacity(grid.isDimmed(day) ? 0.4 : 1)
+                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    /// The lanes that fit, drawn as bars spanning the columns they cover.
+    private func bars(_ segments: [WeekEventSegment]) -> some View {
+        GeometryReader { proxy in
+            let columnWidth = proxy.size.width / CGFloat(days.count)
+
+            ZStack(alignment: .topLeading) {
+                ForEach(segments.filter { $0.lane < barCapacity }) { segment in
+                    EventBar(event: segment.event, height: barHeight)
+                        .opacity(isDimmed(segment) ? 0.4 : 1)
+                        .frame(
+                            width: max(columnWidth * CGFloat(segment.columnCount) - Self.barInset * 2, 0),
+                            height: barHeight
+                        )
+                        .offset(
+                            x: columnWidth * CGFloat(segment.startColumn) + Self.barInset,
+                            y: CGFloat(segment.lane) * (barHeight + Self.barSpacing)
+                        )
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    /// How many lanes fit once the day numbers have taken their share of the row.
     private var barCapacity: Int {
         let reserved = numberDiameter + Self.contentSpacing + Self.verticalPadding * 2
         let available = rowHeight - reserved
@@ -128,29 +196,55 @@ private struct DayCell: View {
         return Int(available / (barHeight + Self.barSpacing))
     }
 
-    private var hiddenCount: Int {
-        max(events.count - barCapacity, 0)
+    /// The events touching this column that didn't make it into a lane that fits.
+    private func hiddenCount(inColumn column: Int, of segments: [WeekEventSegment]) -> Int {
+        segments.count { $0.lane >= barCapacity && $0.covers(column) }
     }
 
-    /// The day number, with the overflow count beside it. The marker sits here
-    /// rather than in a bar slot because a 4x4 widget often has room for only
-    /// one bar — spending that slot on a "+n" would drop every title.
-    ///
-    /// The two share a row instead of the marker overlaying the cell's trailing
-    /// edge: a cell is only a little wider than the selection circle, so an
-    /// overlaid marker collided with the circle on a busy today — and worse at
-    /// the larger Dynamic Type sizes, where the circle scales up.
-    private var dayNumber: some View {
+    /// A bar is only greyed out when every day it covers is — one running from
+    /// the end of a month into the next belongs to both, so it stays full
+    /// strength.
+    private func isDimmed(_ segment: WeekEventSegment) -> Bool {
+        (segment.startColumn...segment.endColumn).allSatisfy { grid.isDimmed(days[$0]) }
+    }
+
+    private func isSelected(_ day: Date) -> Bool {
+        grid.calendar.isDate(day, inSameDayAs: selectedDay)
+    }
+
+    private func accessibilityLabel(for day: Date) -> String {
+        let date = day.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        let events = eventsByDay[day] ?? []
+        guard !events.isEmpty else { return date }
+        return "\(date), \(events.map(\.title).formatted(.list(type: .and)))"
+    }
+}
+
+/// One day's number, with the count of its events that didn't fit beside it.
+///
+/// The overflow marker sits here rather than in a lane because a 4x4 widget
+/// often has room for only one bar — spending that lane on a "+n" would drop
+/// every title. The two share a row rather than the marker overlaying the
+/// column: a column is only a little wider than the selection circle, so an
+/// overlaid marker collided with the circle on a busy today.
+private struct DayNumber: View {
+    let day: Date
+    let isToday: Bool
+    let isSelected: Bool
+    let hiddenCount: Int
+    let diameter: CGFloat
+
+    var body: some View {
         HStack(spacing: 1) {
             Text(day.formatted(.dateTime.day()))
                 .font(.caption)
                 .fontWeight(isToday ? .semibold : .regular)
                 .monospacedDigit()
                 .foregroundStyle(numberColor)
-                .frame(width: numberDiameter, height: numberDiameter)
+                .frame(width: diameter, height: diameter)
                 .background(selectionCircle)
                 // Centres the number in whatever the marker leaves, so a day
-                // without one keeps it centred in the cell.
+                // without one keeps it centred in the column.
                 .frame(maxWidth: .infinity)
 
             if hiddenCount > 0 {
@@ -161,24 +255,6 @@ private struct DayCell: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                     .fixedSize()
-            }
-        }
-    }
-
-    /// One bar per event, filled with its calendar's colour. Cells are narrow,
-    /// so titles truncate — the day detail below the grid shows them in full.
-    private var eventBars: some View {
-        VStack(spacing: Self.barSpacing) {
-            ForEach(events.prefix(barCapacity)) { event in
-                Text(event.title)
-                    .font(.caption2)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .minimumScaleFactor(0.75)
-                    .foregroundStyle(event.titleColor)
-                    .padding(.horizontal, 3)
-                    .frame(maxWidth: .infinity, minHeight: barHeight, alignment: .leading)
-                    .background(event.color, in: .rect(cornerRadius: 3))
             }
         }
     }
@@ -196,12 +272,98 @@ private struct DayCell: View {
         }
         return isToday ? .accentColor : .primary
     }
+}
 
-    private var accessibilityLabel: String {
-        let date = day.formatted(.dateTime.weekday(.wide).month(.wide).day())
-        guard !events.isEmpty else { return date }
-        let titles = events.map(\.title)
-        return "\(date), \(titles.formatted(.list(type: .and)))"
+/// A single event's bar, filled with its calendar's colour. A bar is as narrow
+/// as its column, so titles truncate — the day detail below the grid in the app
+/// shows them in full.
+private struct EventBar: View {
+    let event: DayEvent
+    let height: CGFloat
+
+    var body: some View {
+        Text(event.title)
+            .font(.caption2)
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .minimumScaleFactor(0.75)
+            .foregroundStyle(event.titleColor)
+            .padding(.horizontal, 3)
+            .frame(maxWidth: .infinity, minHeight: height, alignment: .leading)
+            .background(event.color, in: .rect(cornerRadius: 3))
+    }
+}
+
+/// One event's run of columns within a week, and the lane it draws in.
+struct WeekEventSegment: Identifiable {
+    let event: DayEvent
+    let startColumn: Int
+    let endColumn: Int
+    /// The bar's position down the row. Shared by every day of the event, and
+    /// never shared with another event on the same day.
+    let lane: Int
+
+    /// An event can only appear once per week, so its id settles the segment's.
+    var id: String { event.id }
+
+    var columnCount: Int { endColumn - startColumn + 1 }
+
+    func covers(_ column: Int) -> Bool {
+        (startColumn...endColumn).contains(column)
+    }
+
+    /// Packs a week's events into lanes.
+    ///
+    /// `eventsByDay` lists a multi-day event under each day it covers, so the
+    /// columns it spans are the first and last it appears in — which also
+    /// clips it to the week for free. Longest spans are placed first, so the
+    /// bars that cross the most days settle at the top of the row.
+    static func pack(days: [Date], eventsByDay: [Date: [DayEvent]]) -> [WeekEventSegment] {
+        var spans: [(event: DayEvent, first: Int, last: Int)] = []
+        var indexByEvent: [String: Int] = [:]
+
+        for (column, day) in days.enumerated() {
+            for event in eventsByDay[day] ?? [] {
+                if let index = indexByEvent[event.id] {
+                    spans[index].last = column
+                } else {
+                    indexByEvent[event.id] = spans.count
+                    spans.append((event, column, column))
+                }
+            }
+        }
+
+        let ordered = spans.sorted { lhs, rhs in
+            let lhsLength = lhs.last - lhs.first
+            let rhsLength = rhs.last - rhs.first
+            if lhsLength != rhsLength { return lhsLength > rhsLength }
+            if lhs.first != rhs.first { return lhs.first < rhs.first }
+            return DayEvent.isOrderedBefore(lhs.event, rhs.event)
+        }
+
+        // Each lane tracks which of the week's columns it has already given
+        // away, so an event takes the topmost lane free for its whole span.
+        var lanes: [[Bool]] = []
+        var segments: [WeekEventSegment] = []
+
+        for span in ordered {
+            let columns = span.first...span.last
+            var lane = 0
+            while true {
+                if lane == lanes.count {
+                    lanes.append(Array(repeating: false, count: days.count))
+                }
+                if columns.allSatisfy({ !lanes[lane][$0] }) { break }
+                lane += 1
+            }
+
+            for column in columns { lanes[lane][column] = true }
+            segments.append(
+                WeekEventSegment(event: span.event, startColumn: span.first, endColumn: span.last, lane: lane)
+            )
+        }
+
+        return segments
     }
 }
 
@@ -210,10 +372,13 @@ private struct DayCell: View {
 private struct CalendarGridPreview: View {
     let grid: CalendarGrid
 
-    /// How many events to put on each day, keyed by the day's position in the
-    /// grid — which, unlike a day number, doesn't repeat across a span that
-    /// straddles two months.
+    /// How many single-day events to put on each day, keyed by the day's
+    /// position in the grid — which, unlike a day number, doesn't repeat
+    /// across a span that straddles two months.
     let eventCounts: [Int: Int]
+
+    /// Events covering a run of days, as (first day's position, length).
+    var spans: [(start: Int, length: Int)] = []
 
     /// A spread of colours that straddles the point where the bar text has to
     /// flip from white to black.
@@ -256,6 +421,28 @@ private struct CalendarGridPreview: View {
                 )
             }
         }
+
+        // A multi-day event is one value listed under every day it covers,
+        // which is how the real event store groups them too.
+        let spanTitles = ["Berlin trip", "Conference", "Sam on leave"]
+        for (number, span) in spans.enumerated() {
+            let days = grid.days[span.start..<min(span.start + span.length, grid.days.count)]
+            guard let first = days.first, let last = days.last else { continue }
+
+            let event = DayEvent(
+                id: "span-\(number)",
+                title: spanTitles[number % spanTitles.count],
+                start: first,
+                end: last,
+                isAllDay: true,
+                color: Self.palette[(number + 3) % Self.palette.count],
+                titleColor: Self.textColors[(number + 3) % Self.textColors.count]
+            )
+            for day in days {
+                result[day, default: []].append(event)
+            }
+        }
+
         return result
     }
 }
@@ -269,7 +456,8 @@ private let previewGridHeight = WidgetMetrics.systemLarge.height - 40
 #Preview("Quiet month") {
     CalendarGridPreview(
         grid: .month(containing: .now),
-        eventCounts: [6: 1, 14: 2, 22: 1]
+        eventCounts: [6: 1, 14: 2, 22: 1],
+        spans: [(start: 9, length: 4)]
     )
     .frame(height: previewGridHeight)
 }
@@ -277,7 +465,8 @@ private let previewGridHeight = WidgetMetrics.systemLarge.height - 40
 #Preview("Busy month") {
     CalendarGridPreview(
         grid: .month(containing: .now),
-        eventCounts: [4: 1, 5: 6, 6: 2, 11: 3, 12: 1, 18: 4, 19: 2, 25: 5, 26: 1, 27: 2]
+        eventCounts: [4: 1, 5: 6, 6: 2, 11: 3, 12: 1, 18: 4, 19: 2, 25: 5, 26: 1, 27: 2],
+        spans: [(start: 3, length: 6), (start: 16, length: 9)]
     )
     .frame(height: previewGridHeight)
 }
@@ -285,7 +474,8 @@ private let previewGridHeight = WidgetMetrics.systemLarge.height - 40
 #Preview("Four weeks") {
     CalendarGridPreview(
         grid: .weeks(4, containing: .now),
-        eventCounts: [1: 2, 2: 1, 8: 4, 9: 1, 15: 2, 16: 3, 22: 1, 25: 2]
+        eventCounts: [1: 2, 2: 1, 8: 4, 9: 1, 15: 2, 16: 3, 22: 1, 25: 2],
+        spans: [(start: 4, length: 5), (start: 18, length: 3)]
     )
     .frame(height: previewGridHeight)
 }

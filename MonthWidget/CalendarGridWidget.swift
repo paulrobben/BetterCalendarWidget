@@ -182,5 +182,23 @@ func previewEvents(for grid: CalendarGrid) -> [Date: [DayEvent]] {
             )
         }
     }
+
+    // One event covering several days, listed under each of them the way the
+    // real event store groups them, so the previews show a stretched bar.
+    let span = grid.days.prefix(5).suffix(4)
+    if let first = span.first, let last = span.last {
+        let trip = DayEvent(
+            id: "span",
+            title: "Berlin trip",
+            start: first,
+            end: last,
+            isAllDay: true,
+            color: Color(red: 0.20, green: 0.78, blue: 0.35),
+            titleColor: .black
+        )
+        for day in span {
+            result[day, default: []].append(trip)
+        }
+    }
     return result
 }
