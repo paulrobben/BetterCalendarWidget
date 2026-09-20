@@ -277,9 +277,15 @@ private struct DayNumber: View {
 /// A single event's bar, filled with its calendar's colour. A bar is as narrow
 /// as its column, so titles truncate — the day detail below the grid in the app
 /// shows them in full.
+///
+/// All-day events take the colour solid, events with a time take it washed
+/// out, so the two tell apart at a glance without reading anything.
 private struct EventBar: View {
     let event: DayEvent
     let height: CGFloat
+
+    /// How much of the calendar's colour a timed event's bar keeps.
+    private static let timedOpacity: Double = 0.3
 
     var body: some View {
         Text(event.title)
@@ -289,13 +295,25 @@ private struct EventBar: View {
             // didn't match.
             .lineLimit(1)
             .truncationMode(.tail)
-            .foregroundStyle(event.titleColor)
+            .foregroundStyle(titleColor)
             .padding(.horizontal, 3)
             // A fixed height, not a minimum: the background follows the text,
             // whose line height is a shade over the bar's, so a minimum let
             // bars come out at slightly different heights.
             .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .leading)
-            .background(event.color, in: .rect(cornerRadius: 3))
+            .background(fill, in: .rect(cornerRadius: 3))
+    }
+
+    private var fill: Color {
+        event.isAllDay ? event.color : event.color.opacity(Self.timedOpacity)
+    }
+
+    /// `DayEvent.titleColor` is chosen to read against the solid colour, which
+    /// a washed-out bar no longer is — white on pale yellow is unreadable. A
+    /// faint bar takes the foreground colour instead, which suits both a light
+    /// and a dark widget.
+    private var titleColor: Color {
+        event.isAllDay ? event.titleColor : .primary
     }
 }
 
