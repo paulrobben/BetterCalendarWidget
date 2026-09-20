@@ -61,8 +61,27 @@ struct CalendarSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            aboutSection
         }
     }
+
+    private var aboutSection: some View {
+        Section("About") {
+            if let repository = Self.repository {
+                Link(destination: repository) {
+                    HStack {
+                        Label("Source on GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                        Spacer()
+                        Image(systemName: "arrow.up.forward.app")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    private static let repository = URL(string: "https://github.com/paulrobben/BetterCalendarWidget")
 
     private var groupedBySource: [(source: String, options: [CalendarOption])] {
         // `options` arrives sorted by source, so grouping keeps that order.
