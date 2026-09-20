@@ -289,7 +289,11 @@ private struct EventBar: View {
             .minimumScaleFactor(0.75)
             .foregroundStyle(event.titleColor)
             .padding(.horizontal, 3)
-            .frame(maxWidth: .infinity, minHeight: height, alignment: .leading)
+            // A fixed height, not a minimum: a title short enough to render at
+            // full size is taller than one the scale factor has shrunk, and
+            // the background follows the text, so a minimum left short titles
+            // with fatter bars than long ones.
+            .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .leading)
             .background(event.color, in: .rect(cornerRadius: 3))
     }
 }
