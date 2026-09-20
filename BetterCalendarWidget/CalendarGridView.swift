@@ -279,13 +279,18 @@ private struct DayNumber: View {
 /// shows them in full.
 ///
 /// All-day events take the colour solid, events with a time take it washed
-/// out, so the two tell apart at a glance without reading anything.
+/// out behind a stripe of the colour at full strength, so the two tell apart
+/// at a glance without reading anything — and a faint bar still says which
+/// calendar it came from.
 private struct EventBar: View {
     let event: DayEvent
     let height: CGFloat
 
     /// How much of the calendar's colour a timed event's bar keeps.
     private static let timedOpacity: Double = 0.3
+
+    /// The stripe down the leading edge of a timed event's bar.
+    private static let stripeWidth: CGFloat = 2.5
 
     var body: some View {
         Text(event.title)
@@ -297,11 +302,21 @@ private struct EventBar: View {
             .truncationMode(.tail)
             .foregroundStyle(titleColor)
             .padding(.horizontal, 3)
+            // Clear of the stripe, so the title doesn't sit against it.
+            .padding(.leading, event.isAllDay ? 0 : Self.stripeWidth)
             // A fixed height, not a minimum: the background follows the text,
             // whose line height is a shade over the bar's, so a minimum let
             // bars come out at slightly different heights.
             .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .leading)
-            .background(fill, in: .rect(cornerRadius: 3))
+            .background(fill)
+            .overlay(alignment: .leading) {
+                if !event.isAllDay {
+                    event.color.frame(width: Self.stripeWidth)
+                }
+            }
+            // Rounds the fill and the stripe together, so the stripe takes the
+            // corners rather than squaring off the bar's leading edge.
+            .clipShape(.rect(cornerRadius: 3))
     }
 
     private var fill: Color {
