@@ -31,7 +31,7 @@ struct ContentView: View {
                         }
                     }
 
-                    ToolbarItem(placement: .bottomBar) {
+                    ToolbarItem(placement: .topBarLeading) {
                         Button("Settings", systemImage: "gearshape") {
                             isShowingSettings = true
                         }
