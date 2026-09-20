@@ -6,14 +6,81 @@
 	objectVersion = 110;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DAF20B3D305FF28500F444B3 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DAF20B3C305FF28500F444B3 /* WidgetKit.framework */; };
+		DAF20B3F305FF28500F444B3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DAF20B3E305FF28500F444B3 /* SwiftUI.framework */; };
+		DAF20B4A305FF28700F444B3 /* MonthWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DAF20B3A305FF28500F444B3 /* MonthWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DAF20B48305FF28700F444B3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DAF20B14305FE88200F444B3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DAF20B39305FF28500F444B3;
+			remoteInfo = MonthWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DAF20B4F305FF28700F444B3 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				DAF20B4A305FF28700F444B3 /* MonthWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		DAF20B1C305FE88200F444B3 /* BetterCalendarWidget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BetterCalendarWidget.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DAF20B3A305FF28500F444B3 /* MonthWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MonthWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DAF20B3C305FF28500F444B3 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
+		DAF20B3E305FF28500F444B3 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
+		DAF20B8E305FFD2700F444B3 /* MonthWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MonthWidgetExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DAF20B4B305FF28700F444B3 /* Exceptions for "MonthWidget" folder in "MonthWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DAF20B39305FF28500F444B3 /* MonthWidgetExtension */;
+		};
+		DAF20B5A305FF28700F444B3 /* Exceptions for "BetterCalendarWidget" folder in "MonthWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CalendarEventStore.swift,
+				CalendarGrid.swift,
+				CalendarMonth.swift,
+				CalendarSettingsView.swift,
+				CalendarVisibility.swift,
+				DayEvent.swift,
+				MonthGridView.swift,
+				WidgetMetrics.swift,
+			);
+			target = DAF20B39305FF28500F444B3 /* MonthWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DAF20B1E305FE88200F444B3 /* BetterCalendarWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DAF20B5A305FF28700F444B3 /* Exceptions for "BetterCalendarWidget" folder in "MonthWidgetExtension" target */,
+			);
 			path = BetterCalendarWidget;
+			sourceTree = "<group>";
+		};
+		DAF20B40305FF28500F444B3 /* MonthWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DAF20B4B305FF28700F444B3 /* Exceptions for "MonthWidget" folder in "MonthWidgetExtension" target */,
+			);
+			path = MonthWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -24,13 +91,23 @@
 			files = (
 			);
 		};
+		DAF20B37305FF28500F444B3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				DAF20B3F305FF28500F444B3 /* SwiftUI.framework in Frameworks */,
+				DAF20B3D305FF28500F444B3 /* WidgetKit.framework in Frameworks */,
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		DAF20B13305FE88200F444B3 = {
 			isa = PBXGroup;
 			children = (
+				DAF20B8E305FFD2700F444B3 /* MonthWidgetExtension.entitlements */,
 				DAF20B1E305FE88200F444B3 /* BetterCalendarWidget */,
+				DAF20B40305FF28500F444B3 /* MonthWidget */,
+				DAF20B3B305FF28500F444B3 /* Frameworks */,
 				DAF20B1D305FE88200F444B3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -39,8 +116,18 @@
 			isa = PBXGroup;
 			children = (
 				DAF20B1C305FE88200F444B3 /* BetterCalendarWidget.app */,
+				DAF20B3A305FF28500F444B3 /* MonthWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DAF20B3B305FF28500F444B3 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DAF20B3C305FF28500F444B3 /* WidgetKit.framework */,
+				DAF20B3E305FF28500F444B3 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -53,8 +140,12 @@
 				DAF20B18305FE88200F444B3 /* Sources */,
 				DAF20B19305FE88200F444B3 /* Frameworks */,
 				DAF20B1A305FE88200F444B3 /* Resources */,
+				DAF20B4F305FF28700F444B3 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				DAF20B49305FF28700F444B3 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				DAF20B1E305FE88200F444B3 /* BetterCalendarWidget */,
@@ -63,6 +154,24 @@
 			productName = BetterCalendarWidget;
 			productReference = DAF20B1C305FE88200F444B3 /* BetterCalendarWidget.app */;
 			productType = "com.apple.product-type.application";
+		};
+		DAF20B39305FF28500F444B3 /* MonthWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DAF20B4C305FF28700F444B3 /* Build configuration list for PBXNativeTarget "MonthWidgetExtension" */;
+			buildPhases = (
+				DAF20B36305FF28500F444B3 /* Sources */,
+				DAF20B37305FF28500F444B3 /* Frameworks */,
+				DAF20B38305FF28500F444B3 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				DAF20B40305FF28500F444B3 /* MonthWidget */,
+			);
+			name = MonthWidgetExtension;
+			productName = MonthWidgetExtension;
+			productReference = DAF20B3A305FF28500F444B3 /* MonthWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -75,6 +184,9 @@
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					DAF20B1B305FE88200F444B3 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					DAF20B39305FF28500F444B3 = {
 						CreatedOnToolsVersion = 27.0;
 					};
 				};
@@ -94,12 +206,18 @@
 			projectRoot = "";
 			targets = (
 				DAF20B1B305FE88200F444B3 /* BetterCalendarWidget */,
+				DAF20B39305FF28500F444B3 /* MonthWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		DAF20B1A305FE88200F444B3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		DAF20B38305FF28500F444B3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -112,7 +230,20 @@
 			files = (
 			);
 		};
+		DAF20B36305FF28500F444B3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DAF20B49305FF28700F444B3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DAF20B39305FF28500F444B3 /* MonthWidgetExtension */;
+			targetProxy = DAF20B48305FF28700F444B3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		DAF20B27305FE88300F444B3 /* Debug configuration for PBXProject "BetterCalendarWidget" */ = {
@@ -241,11 +372,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BetterCalendarWidget/BetterCalendarWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 964NT2AXYZ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = bcw;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "BetterCalendarWidget reads your calendars so it can show your events in the monthly overview.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -258,6 +392,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = paulrobben.BetterCalendarWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -273,11 +408,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BetterCalendarWidget/BetterCalendarWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 964NT2AXYZ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = bcw;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "BetterCalendarWidget reads your calendars so it can show your events in the monthly overview.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -290,6 +428,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = paulrobben.BetterCalendarWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -297,6 +436,94 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		DAF20B4D305FF28700F444B3 /* Debug configuration for PBXNativeTarget "MonthWidgetExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = MonthWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 964NT2AXYZ;
+				ENABLE_APP_SANDBOX = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MonthWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MonthWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = paulrobben.BetterCalendarWidget.MonthWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Debug;
+		};
+		DAF20B4E305FF28700F444B3 /* Release configuration for PBXNativeTarget "MonthWidgetExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = MonthWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 964NT2AXYZ;
+				ENABLE_APP_SANDBOX = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MonthWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MonthWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = paulrobben.BetterCalendarWidget.MonthWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Release;
 		};
@@ -316,6 +543,14 @@
 			buildConfigurations = (
 				DAF20B2A305FE88300F444B3 /* Debug configuration for PBXNativeTarget "BetterCalendarWidget" */,
 				DAF20B2B305FE88300F444B3 /* Release configuration for PBXNativeTarget "BetterCalendarWidget" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		DAF20B4C305FF28700F444B3 /* Build configuration list for PBXNativeTarget "MonthWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DAF20B4D305FF28700F444B3 /* Debug configuration for PBXNativeTarget "MonthWidgetExtension" */,
+				DAF20B4E305FF28700F444B3 /* Release configuration for PBXNativeTarget "MonthWidgetExtension" */,
 			);
 			defaultConfigurationName = Release;
 		};
