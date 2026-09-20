@@ -40,14 +40,12 @@ final class CalendarEventStore {
         didSet {
             guard hiddenCalendarIdentifiers != oldValue else { return }
             visibility.hiddenIdentifiers = hiddenCalendarIdentifiers
-            WidgetCenter.shared.reloadTimelines(ofKind: Self.widgetKind)
+            WidgetCenter.shared.reloadAllTimelines()
             if let loadedRange {
                 loadEvents(in: loadedRange)
             }
         }
     }
-
-    static let widgetKind = "MonthWidget"
 
     init(calendar: Calendar = .current) {
         self.calendar = calendar
@@ -129,9 +127,10 @@ final class CalendarEventStore {
             .map { $0.name }
 
         for await _ in changes {
-            // The widget can't observe the event store while it isn't running,
-            // so the app nudges it whenever the calendar database changes.
-            WidgetCenter.shared.reloadTimelines(ofKind: Self.widgetKind)
+            // The widgets can't observe the event store while they aren't
+            // running, so the app nudges them whenever the calendar database
+            // changes.
+            WidgetCenter.shared.reloadAllTimelines()
 
             guard let loadedRange else { continue }
             loadEvents(in: loadedRange)

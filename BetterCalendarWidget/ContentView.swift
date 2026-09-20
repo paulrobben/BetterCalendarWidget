@@ -54,9 +54,12 @@ struct ContentView: View {
         // Refetch whenever the visible month changes, and once more as soon as
         // access is granted.
         .task(id: LoadKey(monthStart: month.start, access: eventStore.access)) {
-            eventStore.loadEvents(in: month.gridRange)
+            eventStore.loadEvents(in: grid.gridRange)
         }
     }
+
+    /// The weeks the current month is drawn as.
+    private var grid: CalendarGrid { month.grid }
 
     @ViewBuilder
     private var content: some View {
@@ -86,17 +89,17 @@ struct ContentView: View {
     /// to the row height, so this never needs to scroll.
     private var widgetSizedMonth: some View {
         VStack(spacing: 2) {
-            WeekdayHeaderView(symbols: month.weekdaySymbols)
+            WeekdayHeaderView(symbols: grid.weekdaySymbols)
 
             // A GeometryReader in a stack takes the space the fixed-size
             // siblings leave, which is exactly the height to divide by.
             GeometryReader { proxy in
-                MonthGridView(
-                    month: month,
+                CalendarGridView(
+                    grid: grid,
                     eventsByDay: eventStore.eventsByDay,
                     selectedDay: $selectedDay,
-                    onMonthChange: changeMonth,
-                    rowHeight: proxy.size.height / CGFloat(month.weekCount)
+                    onPeriodChange: changeMonth,
+                    rowHeight: proxy.size.height / CGFloat(grid.weekCount)
                 )
             }
         }

@@ -55,11 +55,11 @@
 			membershipExceptions = (
 				CalendarEventStore.swift,
 				CalendarGrid.swift,
+				CalendarGridView.swift,
 				CalendarMonth.swift,
 				CalendarSettingsView.swift,
 				CalendarVisibility.swift,
 				DayEvent.swift,
-				MonthGridView.swift,
 				WidgetMetrics.swift,
 			);
 			target = DAF20B39305FF28500F444B3 /* MonthWidgetExtension */;

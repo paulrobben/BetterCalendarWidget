@@ -1,17 +1,19 @@
 //
-//  MonthGridView.swift
+//  CalendarGridView.swift
 //  BetterCalendarWidget
 //
 
 import SwiftUI
 
-/// The column headings above the month grid.
+/// The column headings above a calendar grid.
 struct WeekdayHeaderView: View {
     let symbols: [String]
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(symbols, id: \.self) { symbol in
+            // Identified by column, not by label: most languages repeat a
+            // very short weekday symbol — English has two Ts and two Ss.
+            ForEach(Array(symbols.enumerated()), id: \.offset) { _, symbol in
                 Text(symbol)
                     .font(.caption)
                     .fontWeight(.semibold)
@@ -24,15 +26,17 @@ struct WeekdayHeaderView: View {
     }
 }
 
-/// A month laid out as rows of seven days, with a titled bar for each event.
-struct MonthGridView: View {
-    let month: CalendarMonth
+/// A run of whole weeks laid out as rows of seven days, with a titled bar for
+/// each event. A month and a four-week span differ only in the grid handed in.
+struct CalendarGridView: View {
+    let grid: CalendarGrid
     let eventsByDay: [Date: [DayEvent]]
     @Binding var selectedDay: Date
 
-    /// Called when the person swipes horizontally, or taps a day belonging to
-    /// an adjacent month.
-    let onMonthChange: (Int) -> Void
+    /// Called when the person swipes horizontally, or taps a dimmed day from
+    /// an adjacent period. A grid that dims nothing — four weeks, say — only
+    /// ever calls this from a swipe, so widgets leave it at its default.
+    var onPeriodChange: (Int) -> Void = { _ in }
 
     /// The height of every row. Days cap their bars to fit it, so the grid is
     /// always exactly `weekCount * rowHeight` tall.
@@ -42,12 +46,12 @@ struct MonthGridView: View {
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: 0) {
-            ForEach(month.days, id: \.self) { day in
+            ForEach(grid.days, id: \.self) { day in
                 DayCell(
                     day: day,
-                    calendar: month.calendar,
-                    isInMonth: month.contains(day),
-                    isSelected: month.calendar.isDate(day, inSameDayAs: selectedDay),
+                    calendar: grid.calendar,
+                    isDimmed: grid.isDimmed(day),
+                    isSelected: grid.calendar.isDate(day, inSameDayAs: selectedDay),
                     events: eventsByDay[day] ?? [],
                     rowHeight: rowHeight
                 )
@@ -55,33 +59,35 @@ struct MonthGridView: View {
                 .onTapGesture { select(day) }
             }
         }
-        .gesture(monthSwipe)
+        .gesture(periodSwipe)
     }
 
-    private var monthSwipe: some Gesture {
+    private var periodSwipe: some Gesture {
         DragGesture(minimumDistance: 24)
             .onEnded { value in
                 let width = value.translation.width
                 guard abs(width) > abs(value.translation.height) else { return }
-                onMonthChange(width < 0 ? 1 : -1)
+                onPeriodChange(width < 0 ? 1 : -1)
             }
     }
 
     private func select(_ day: Date) {
         selectedDay = day
         // Tapping a greyed-out day from a neighbouring month follows it there.
-        guard !month.contains(day) else { return }
-        onMonthChange(day < month.start ? -1 : 1)
+        guard grid.isDimmed(day) else { return }
+        onPeriodChange(day < grid.firstProminentDay ? -1 : 1)
     }
 }
 
-/// One day in the month grid: its number, then as many titled event bars as
-/// the row height allows. Anything that doesn't fit collapses into a `+n`
-/// marker, so a busy day can't stretch the row.
+/// One day in the grid: its number, then as many titled event bars as the row
+/// height allows. Anything that doesn't fit collapses into a `+n` marker, so a
+/// busy day can't stretch the row.
 private struct DayCell: View {
     let day: Date
     let calendar: Calendar
-    let isInMonth: Bool
+    /// True for a day the grid shows only as padding, such as a neighbouring
+    /// month's days filling out a month's first and last rows.
+    let isDimmed: Bool
     let isSelected: Bool
     let events: [DayEvent]
 
@@ -102,7 +108,7 @@ private struct DayCell: View {
             dayNumber
             eventBars
         }
-        .opacity(isInMonth ? 1 : 0.4)
+        .opacity(isDimmed ? 0.4 : 1)
         .padding(.horizontal, 1.5)
         .padding(.vertical, Self.verticalPadding)
         // maxHeight fills the row, which LazyVGrid sizes to its tallest day.
@@ -129,25 +135,34 @@ private struct DayCell: View {
     /// The day number, with the overflow count beside it. The marker sits here
     /// rather than in a bar slot because a 4x4 widget often has room for only
     /// one bar — spending that slot on a "+n" would drop every title.
+    ///
+    /// The two share a row instead of the marker overlaying the cell's trailing
+    /// edge: a cell is only a little wider than the selection circle, so an
+    /// overlaid marker collided with the circle on a busy today — and worse at
+    /// the larger Dynamic Type sizes, where the circle scales up.
     private var dayNumber: some View {
-        Text(day.formatted(.dateTime.day()))
-            .font(.caption)
-            .fontWeight(isToday ? .semibold : .regular)
-            .monospacedDigit()
-            .foregroundStyle(numberColor)
-            .frame(width: numberDiameter, height: numberDiameter)
-            .background(selectionCircle)
-            .frame(maxWidth: .infinity)
-            .overlay(alignment: .trailing) {
-                if hiddenCount > 0 {
-                    Text("+\(hiddenCount)")
-                        .font(.system(size: 8, weight: .bold))
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
+        HStack(spacing: 1) {
+            Text(day.formatted(.dateTime.day()))
+                .font(.caption)
+                .fontWeight(isToday ? .semibold : .regular)
+                .monospacedDigit()
+                .foregroundStyle(numberColor)
+                .frame(width: numberDiameter, height: numberDiameter)
+                .background(selectionCircle)
+                // Centres the number in whatever the marker leaves, so a day
+                // without one keeps it centred in the cell.
+                .frame(maxWidth: .infinity)
+
+            if hiddenCount > 0 {
+                Text("+\(hiddenCount)")
+                    .font(.system(size: 8, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .fixedSize()
             }
+        }
     }
 
     /// One bar per event, filled with its calendar's colour. Cells are narrow,
@@ -190,13 +205,15 @@ private struct DayCell: View {
     }
 }
 
-/// Renders the grid against made-up events, so the layout can be checked
-/// without depending on whatever is in the real calendar database.
-private struct MonthGridPreview: View {
-    /// How many events to put on each day, keyed by day of the month.
-    let eventCounts: [Int: Int]
+/// Renders a grid against made-up events, so the layout can be checked without
+/// depending on whatever is in the real calendar database.
+private struct CalendarGridPreview: View {
+    let grid: CalendarGrid
 
-    private let month = CalendarMonth(containing: .now)
+    /// How many events to put on each day, keyed by the day's position in the
+    /// grid — which, unlike a day number, doesn't repeat across a span that
+    /// straddles two months.
+    let eventCounts: [Int: Int]
 
     /// A spread of colours that straddles the point where the bar text has to
     /// flip from white to black.
@@ -212,12 +229,11 @@ private struct MonthGridPreview: View {
 
     var body: some View {
         GeometryReader { proxy in
-            MonthGridView(
-                month: month,
+            CalendarGridView(
+                grid: grid,
                 eventsByDay: eventsByDay,
-                selectedDay: .constant(month.preferredSelection),
-                onMonthChange: { _ in },
-                rowHeight: proxy.size.height / CGFloat(month.weekCount)
+                selectedDay: .constant(grid.calendar.startOfDay(for: .now)),
+                rowHeight: proxy.size.height / CGFloat(grid.weekCount)
             )
         }
     }
@@ -226,18 +242,17 @@ private struct MonthGridPreview: View {
         let titles = ["Standup", "Design review", "Lunch with Sam", "1:1", "Dentist", "Retro"]
         var result: [Date: [DayEvent]] = [:]
 
-        for day in month.days {
-            let dayOfMonth = month.calendar.component(.day, from: day)
-            guard month.contains(day), let count = eventCounts[dayOfMonth] else { continue }
+        for (index, day) in grid.days.enumerated() {
+            guard !grid.isDimmed(day), let count = eventCounts[index] else { continue }
 
-            result[day] = (0..<count).map { index in
+            result[day] = (0..<count).map { position in
                 DayEvent(
-                    id: "\(dayOfMonth)-\(index)",
-                    title: titles[index % titles.count],
+                    id: "\(index)-\(position)",
+                    title: titles[position % titles.count],
                     start: day,
                     end: day,
-                    color: Self.palette[index % Self.palette.count],
-                    titleColor: Self.textColors[index % Self.textColors.count]
+                    color: Self.palette[position % Self.palette.count],
+                    titleColor: Self.textColors[position % Self.textColors.count]
                 )
             }
         }
@@ -252,11 +267,25 @@ private struct MonthGridPreview: View {
 private let previewGridHeight = WidgetMetrics.systemLarge.height - 40
 
 #Preview("Quiet month") {
-    MonthGridPreview(eventCounts: [4: 1, 12: 2, 20: 1])
-        .frame(height: previewGridHeight)
+    CalendarGridPreview(
+        grid: .month(containing: .now),
+        eventCounts: [6: 1, 14: 2, 22: 1]
+    )
+    .frame(height: previewGridHeight)
 }
 
 #Preview("Busy month") {
-    MonthGridPreview(eventCounts: [2: 1, 3: 6, 4: 2, 9: 3, 10: 1, 16: 4, 17: 2, 23: 5, 24: 1, 25: 2])
-        .frame(height: previewGridHeight)
+    CalendarGridPreview(
+        grid: .month(containing: .now),
+        eventCounts: [4: 1, 5: 6, 6: 2, 11: 3, 12: 1, 18: 4, 19: 2, 25: 5, 26: 1, 27: 2]
+    )
+    .frame(height: previewGridHeight)
+}
+
+#Preview("Four weeks") {
+    CalendarGridPreview(
+        grid: .weeks(4, containing: .now),
+        eventCounts: [1: 2, 2: 1, 8: 4, 9: 1, 15: 2, 16: 3, 22: 1, 25: 2]
+    )
+    .frame(height: previewGridHeight)
 }
