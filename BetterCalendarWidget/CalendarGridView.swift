@@ -284,15 +284,16 @@ private struct EventBar: View {
     var body: some View {
         Text(event.title)
             .font(.caption2)
+            // Every title reads at one size: a long one truncates rather than
+            // shrinking to fit, which had titles across a row at sizes that
+            // didn't match.
             .lineLimit(1)
             .truncationMode(.tail)
-            .minimumScaleFactor(0.75)
             .foregroundStyle(event.titleColor)
             .padding(.horizontal, 3)
-            // A fixed height, not a minimum: a title short enough to render at
-            // full size is taller than one the scale factor has shrunk, and
-            // the background follows the text, so a minimum left short titles
-            // with fatter bars than long ones.
+            // A fixed height, not a minimum: the background follows the text,
+            // whose line height is a shade over the bar's, so a minimum let
+            // bars come out at slightly different heights.
             .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .leading)
             .background(event.color, in: .rect(cornerRadius: 3))
     }
