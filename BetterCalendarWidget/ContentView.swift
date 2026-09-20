@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.openURL) private var openURL
+
     @State private var eventStore = CalendarEventStore()
     @State private var month = CalendarMonth(containing: .now)
     @State private var selectedDay = Calendar.current.startOfDay(for: .now)
@@ -77,12 +79,30 @@ struct ContentView: View {
     private var monthOverview: some View {
         VStack(spacing: 0) {
             widgetSizedMonth
+                .padding(.top, 12)
+
+            openCalendarButton
+                .padding(.horizontal)
                 .padding(.vertical, 12)
 
             Divider()
 
             DayEventsView(day: selectedDay, events: eventStore.events(on: selectedDay))
         }
+    }
+
+    /// Hands off to Apple's Calendar, which is where the person edits events —
+    /// this app only shows them.
+    private var openCalendarButton: some View {
+        Button {
+            openSystemCalendar()
+        } label: {
+            Label("Open in Calendar", systemImage: "calendar")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
     }
 
     /// The month at the size it occupies as a 4x4 widget. Days cap their bars
@@ -121,6 +141,15 @@ struct ContentView: View {
         if !next.contains(selectedDay) {
             selectedDay = next.preferredSelection
         }
+    }
+
+    /// Opens Apple's Calendar on the selected day. `calshow:` takes the day to
+    /// show as whole seconds since the reference date; without one it opens
+    /// wherever the person last left it.
+    private func openSystemCalendar() {
+        let seconds = Int(selectedDay.timeIntervalSinceReferenceDate)
+        guard let url = URL(string: "calshow:\(seconds)") else { return }
+        openURL(url)
     }
 
     private func goToToday() {
