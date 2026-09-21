@@ -96,6 +96,31 @@ final class CalendarEventStore {
         eventsByDay = groupByDay(store.events(matching: predicate), in: range)
     }
 
+    /// The store EventKit's own editor saves through. It needs the very store
+    /// the event it edits came from, so the two can't be separated.
+    var writingStore: EKEventStore { store }
+
+    /// An unsaved event on `day`, starting at the current time of day and
+    /// running an hour, for EventKit's editor to fill in and save.
+    func draftEvent(on day: Date) -> EKEvent? {
+        guard access == .granted else { return nil }
+
+        let now = Date.now
+        let time = calendar.dateComponents([.hour, .minute], from: now)
+        let start = calendar.date(
+            bySettingHour: time.hour ?? 0,
+            minute: time.minute ?? 0,
+            second: 0,
+            of: day
+        ) ?? day
+
+        let event = EKEvent(eventStore: store)
+        event.calendar = store.defaultCalendarForNewEvents
+        event.startDate = start
+        event.endDate = calendar.date(byAdding: .hour, value: 1, to: start) ?? start
+        return event
+    }
+
     private var visibleCalendars: [EKCalendar] {
         store.calendars(for: .event).filter {
             !hiddenCalendarIdentifiers.contains($0.calendarIdentifier)

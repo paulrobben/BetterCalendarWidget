@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var selectedDay = Calendar.current.startOfDay(for: .now)
     @State private var isShowingSettings = false
     @State private var detailedEvent: DetailedEvent?
+    @State private var draftEvent: DraftEvent?
 
     var body: some View {
         NavigationStack {
@@ -83,7 +84,7 @@ struct ContentView: View {
             widgetSizedMonth
                 .padding(.top, 12)
 
-            openCalendarButton
+            dayActions
                 .padding(.horizontal)
                 .padding(.vertical, 12)
 
@@ -98,6 +99,49 @@ struct ContentView: View {
         .sheet(item: $detailedEvent) { detailed in
             EventDetailView(event: detailed.event) { detailedEvent = nil }
         }
+        .sheet(item: $draftEvent) { draft in
+            EventEditorView(event: draft.event, store: eventStore.writingStore) {
+                draftEvent = nil
+            }
+        }
+    }
+
+    /// What can be done with the selected day: add an event to it, or hand the
+    /// day over to Apple's Calendar.
+    private var dayActions: some View {
+        HStack(spacing: 12) {
+            addEventButton
+            openCalendarButton
+        }
+        .controlSize(.large)
+    }
+
+    private var addEventButton: some View {
+        Button {
+            addEvent()
+        } label: {
+            Label("Add Event", systemImage: "plus")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+    }
+
+    /// Hands the selected day to Apple's Calendar. Icon only: adding an event
+    /// is the more likely thing to want, so it takes the width.
+    private var openCalendarButton: some View {
+        Button("Open in Calendar", systemImage: "calendar") {
+            openSystemCalendar()
+        }
+        .labelStyle(.iconOnly)
+        .buttonStyle(.bordered)
+    }
+
+    /// Opens EventKit's editor on a new event, at the selected day and the
+    /// current time. Nothing is written unless the person taps Add.
+    private func addEvent() {
+        guard let event = eventStore.draftEvent(on: selectedDay) else { return }
+        draftEvent = DraftEvent(event: event)
     }
 
     /// Shows EventKit's detail for a tapped event. Silently does nothing if the
@@ -105,20 +149,6 @@ struct ContentView: View {
     private func showDetail(_ dayEvent: DayEvent) {
         guard let event = eventStore.ekEvent(for: dayEvent) else { return }
         detailedEvent = DetailedEvent(id: dayEvent.id, event: event)
-    }
-
-    /// Hands off to Apple's Calendar, which is where the person edits events —
-    /// this app only shows them.
-    private var openCalendarButton: some View {
-        Button {
-            openSystemCalendar()
-        } label: {
-            Label("Open in Calendar", systemImage: "calendar")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
     }
 
     /// The month at the size it occupies as a 4x4 widget. Days cap their bars
@@ -186,6 +216,13 @@ private struct LoadKey: Equatable {
 /// own — unique per occurrence.
 private struct DetailedEvent: Identifiable {
     let id: String
+    let event: EKEvent
+}
+
+/// The unsaved event the editor is filling in. A fresh id each time, so
+/// reopening the editor presents a new draft rather than reusing the last.
+private struct DraftEvent: Identifiable {
+    let id = UUID()
     let event: EKEvent
 }
 

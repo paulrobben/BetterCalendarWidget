@@ -60,3 +60,47 @@ struct EventDetailView: UIViewControllerRepresentable {
         }
     }
 }
+
+/// EventKit's own event editor, shown when adding an event.
+///
+/// Unlike `EKEventViewController` this one is a navigation controller already,
+/// and brings its own Cancel and Add buttons. Saving fires an
+/// `EKEventStoreChanged` notification, which the app is already listening for,
+/// so the grid and the widgets pick the new event up on their own.
+struct EventEditorView: UIViewControllerRepresentable {
+    /// The event to edit, which must have come from `store`.
+    let event: EKEvent
+    let store: EKEventStore
+    let onFinish: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onFinish: onFinish)
+    }
+
+    func makeUIViewController(context: Context) -> EKEventEditViewController {
+        let editor = EKEventEditViewController()
+        editor.event = event
+        editor.eventStore = store
+        editor.editViewDelegate = context.coordinator
+        return editor
+    }
+
+    func updateUIViewController(_ controller: EKEventEditViewController, context: Context) {
+        context.coordinator.onFinish = onFinish
+    }
+
+    final class Coordinator: NSObject, EKEventEditViewDelegate {
+        var onFinish: () -> Void
+
+        init(onFinish: @escaping () -> Void) {
+            self.onFinish = onFinish
+        }
+
+        func eventEditViewController(
+            _ controller: EKEventEditViewController,
+            didCompleteWith action: EKEventEditViewAction
+        ) {
+            onFinish()
+        }
+    }
+}
