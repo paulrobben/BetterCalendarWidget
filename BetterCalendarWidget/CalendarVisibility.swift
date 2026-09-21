@@ -30,3 +30,21 @@ struct CalendarVisibility {
         nonmutating set { defaults.set(newValue.sorted(), forKey: Self.key) }
     }
 }
+
+/// The calendar the app adds new events to, or nil to follow the system's own
+/// default. Only the app writes events, but this lives in the same App Group
+/// defaults so there's one place to look for what the person has chosen.
+struct NewEventCalendar {
+    private static let key = "newEventCalendarIdentifier"
+
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults? = nil) {
+        self.defaults = defaults ?? UserDefaults(suiteName: CalendarVisibility.appGroup) ?? .standard
+    }
+
+    var identifier: String? {
+        get { defaults.string(forKey: Self.key) }
+        nonmutating set { defaults.set(newValue, forKey: Self.key) }
+    }
+}

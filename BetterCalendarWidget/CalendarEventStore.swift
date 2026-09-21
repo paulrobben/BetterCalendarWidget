@@ -34,6 +34,17 @@ final class CalendarEventStore {
 
     private let visibility = CalendarVisibility()
 
+    private let newEventCalendar = NewEventCalendar()
+
+    /// The calendar new events go to, or nil to follow the system's own
+    /// default. Writing this persists it.
+    var newEventCalendarIdentifier: String? {
+        didSet {
+            guard newEventCalendarIdentifier != oldValue else { return }
+            newEventCalendar.identifier = newEventCalendarIdentifier
+        }
+    }
+
     /// Calendars the person has switched off in settings. Writing this
     /// persists to the App Group, refetches, and refreshes the widget.
     var hiddenCalendarIdentifiers: Set<String> {
@@ -50,6 +61,7 @@ final class CalendarEventStore {
     init(calendar: Calendar = .current) {
         self.calendar = calendar
         self.hiddenCalendarIdentifiers = visibility.hiddenIdentifiers
+        self.newEventCalendarIdentifier = newEventCalendar.identifier
     }
 
     /// Asks for full access, which EventKit requires in order to read events.
@@ -115,7 +127,7 @@ final class CalendarEventStore {
         ) ?? day
 
         let event = EKEvent(eventStore: store)
-        event.calendar = store.defaultCalendarForNewEvents
+        event.calendar = chosenNewEventCalendar ?? store.defaultCalendarForNewEvents
         event.startDate = start
         event.endDate = calendar.date(byAdding: .hour, value: 1, to: start) ?? start
         return event
@@ -127,9 +139,32 @@ final class CalendarEventStore {
         }
     }
 
+    /// The chosen calendar for new events, or nil to leave it to the system —
+    /// including when the choice has since been deleted or turned read-only,
+    /// as a subscribed holiday calendar is.
+    private var chosenNewEventCalendar: EKCalendar? {
+        guard let identifier = newEventCalendarIdentifier,
+              let calendar = store.calendar(withIdentifier: identifier),
+              calendar.allowsContentModifications
+        else {
+            return nil
+        }
+        return calendar
+    }
+
     /// Every event calendar, as plain values for the settings list.
     func calendarOptions() -> [CalendarOption] {
-        store.calendars(for: .event)
+        options(from: store.calendars(for: .event))
+    }
+
+    /// Only the calendars that can take a new event — a subscribed holiday
+    /// calendar can't, and offering one would just make saving fail.
+    func writableCalendarOptions() -> [CalendarOption] {
+        options(from: store.calendars(for: .event).filter(\.allowsContentModifications))
+    }
+
+    private func options(from calendars: [EKCalendar]) -> [CalendarOption] {
+        calendars
             .map(CalendarOption.init)
             .sorted {
                 if $0.sourceTitle != $1.sourceTitle {

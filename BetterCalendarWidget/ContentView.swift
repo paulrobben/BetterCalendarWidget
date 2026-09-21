@@ -46,7 +46,9 @@ struct ContentView: View {
                 .sheet(isPresented: $isShowingSettings) {
                     CalendarSettingsView(
                         options: eventStore.calendarOptions(),
-                        hiddenIdentifiers: $eventStore.hiddenCalendarIdentifiers
+                        writableOptions: eventStore.writableCalendarOptions(),
+                        hiddenIdentifiers: $eventStore.hiddenCalendarIdentifiers,
+                        newEventCalendarIdentifier: $eventStore.newEventCalendarIdentifier
                     )
                 }
         }
