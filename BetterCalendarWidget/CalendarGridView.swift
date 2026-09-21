@@ -405,83 +405,90 @@ struct WeekEventSegment: Identifiable {
     }
 }
 
+/// A spread of colours that straddles the point where a bar's text has to flip
+/// from white to black.
+private let previewPalette: [(color: Color, titleColor: Color)] = [
+    (Color(red: 0.00, green: 0.48, blue: 1.00), .white),
+    (Color(red: 1.00, green: 0.23, blue: 0.19), .white),
+    (Color(red: 1.00, green: 0.80, blue: 0.00), .black),
+    (Color(red: 0.20, green: 0.78, blue: 0.35), .black),
+    (Color(red: 0.69, green: 0.32, blue: 0.87), .white),
+]
+
+/// Made-up events for the previews, here and in the widget target. `DayEvent`
+/// is a plain value, so this needs no event store — which the widget
+/// extension's process can't create one of anyway.
+///
+/// `counts` is how many events each day gets, cycled across the grid; its
+/// length is coprime with seven, so no two weeks come out alike however many
+/// the grid shows. `spans` are all-day events covering a run of days, given as
+/// a position in the grid and a length, and listed under every day they cover
+/// the way the real event store groups them.
+@MainActor
+func previewEvents(
+    for grid: CalendarGrid,
+    counts: [Int] = [0, 2, 0, 5, 1, 0, 3, 0, 1, 4, 0],
+    spans: [(start: Int, length: Int)] = [(start: 1, length: 4)]
+) -> [Date: [DayEvent]] {
+    let titles = ["Standup", "Design review", "Lunch with Sam", "1:1", "Dentist", "Retro"]
+    let spanTitles = ["Berlin trip", "Conference", "Sam on leave"]
+    var result: [Date: [DayEvent]] = [:]
+
+    for (index, day) in grid.days.enumerated() where !grid.isDimmed(day) {
+        let count = counts[index % counts.count]
+        guard count > 0 else { continue }
+
+        result[day] = (0..<count).map { position in
+            let colour = previewPalette[position % previewPalette.count]
+            return DayEvent(
+                id: "\(index)-\(position)",
+                title: titles[position % titles.count],
+                start: day,
+                end: day,
+                color: colour.color,
+                titleColor: colour.titleColor
+            )
+        }
+    }
+
+    for (number, span) in spans.enumerated() {
+        let days = grid.days[span.start..<min(span.start + span.length, grid.days.count)]
+        guard let first = days.first, let last = days.last else { continue }
+
+        let colour = previewPalette[(number + 3) % previewPalette.count]
+        let event = DayEvent(
+            id: "span-\(number)",
+            title: spanTitles[number % spanTitles.count],
+            start: first,
+            end: last,
+            isAllDay: true,
+            color: colour.color,
+            titleColor: colour.titleColor
+        )
+        for day in days {
+            result[day, default: []].append(event)
+        }
+    }
+
+    return result
+}
+
 /// Renders a grid against made-up events, so the layout can be checked without
 /// depending on whatever is in the real calendar database.
 private struct CalendarGridPreview: View {
     let grid: CalendarGrid
-
-    /// How many single-day events to put on each day, keyed by the day's
-    /// position in the grid — which, unlike a day number, doesn't repeat
-    /// across a span that straddles two months.
-    let eventCounts: [Int: Int]
-
-    /// Events covering a run of days, as (first day's position, length).
+    let counts: [Int]
     var spans: [(start: Int, length: Int)] = []
-
-    /// A spread of colours that straddles the point where the bar text has to
-    /// flip from white to black.
-    private static let palette: [Color] = [
-        Color(red: 0.00, green: 0.48, blue: 1.00),
-        Color(red: 1.00, green: 0.23, blue: 0.19),
-        Color(red: 1.00, green: 0.80, blue: 0.00),
-        Color(red: 0.20, green: 0.78, blue: 0.35),
-        Color(red: 0.69, green: 0.32, blue: 0.87),
-    ]
-
-    private static let textColors: [Color] = [.white, .white, .black, .black, .white]
 
     var body: some View {
         GeometryReader { proxy in
             CalendarGridView(
                 grid: grid,
-                eventsByDay: eventsByDay,
+                eventsByDay: previewEvents(for: grid, counts: counts, spans: spans),
                 selectedDay: .constant(grid.calendar.startOfDay(for: .now)),
                 rowHeight: proxy.size.height / CGFloat(grid.weekCount)
             )
         }
-    }
-
-    private var eventsByDay: [Date: [DayEvent]] {
-        let titles = ["Standup", "Design review", "Lunch with Sam", "1:1", "Dentist", "Retro"]
-        var result: [Date: [DayEvent]] = [:]
-
-        for (index, day) in grid.days.enumerated() {
-            guard !grid.isDimmed(day), let count = eventCounts[index] else { continue }
-
-            result[day] = (0..<count).map { position in
-                DayEvent(
-                    id: "\(index)-\(position)",
-                    title: titles[position % titles.count],
-                    start: day,
-                    end: day,
-                    color: Self.palette[position % Self.palette.count],
-                    titleColor: Self.textColors[position % Self.textColors.count]
-                )
-            }
-        }
-
-        // A multi-day event is one value listed under every day it covers,
-        // which is how the real event store groups them too.
-        let spanTitles = ["Berlin trip", "Conference", "Sam on leave"]
-        for (number, span) in spans.enumerated() {
-            let days = grid.days[span.start..<min(span.start + span.length, grid.days.count)]
-            guard let first = days.first, let last = days.last else { continue }
-
-            let event = DayEvent(
-                id: "span-\(number)",
-                title: spanTitles[number % spanTitles.count],
-                start: first,
-                end: last,
-                isAllDay: true,
-                color: Self.palette[(number + 3) % Self.palette.count],
-                titleColor: Self.textColors[(number + 3) % Self.textColors.count]
-            )
-            for day in days {
-                result[day, default: []].append(event)
-            }
-        }
-
-        return result
     }
 }
 
@@ -494,7 +501,7 @@ private let previewGridHeight = WidgetMetrics.systemLarge.height - 40
 #Preview("Quiet month") {
     CalendarGridPreview(
         grid: .month(containing: .now),
-        eventCounts: [6: 1, 14: 2, 22: 1],
+        counts: [0, 0, 1, 0, 0, 2, 0, 0, 0, 1, 0],
         spans: [(start: 9, length: 4)]
     )
     .frame(height: previewGridHeight)
@@ -503,7 +510,7 @@ private let previewGridHeight = WidgetMetrics.systemLarge.height - 40
 #Preview("Busy month") {
     CalendarGridPreview(
         grid: .month(containing: .now),
-        eventCounts: [4: 1, 5: 6, 6: 2, 11: 3, 12: 1, 18: 4, 19: 2, 25: 5, 26: 1, 27: 2],
+        counts: [1, 6, 2, 0, 3, 1, 0, 4, 2, 0, 5],
         spans: [(start: 3, length: 6), (start: 16, length: 9)]
     )
     .frame(height: previewGridHeight)
@@ -512,7 +519,7 @@ private let previewGridHeight = WidgetMetrics.systemLarge.height - 40
 #Preview("Four weeks") {
     CalendarGridPreview(
         grid: .weeks(4, containing: .now),
-        eventCounts: [1: 2, 2: 1, 8: 4, 9: 1, 15: 2, 16: 3, 22: 1, 25: 2],
+        counts: [0, 2, 0, 5, 1, 0, 3, 0, 1, 4, 0],
         spans: [(start: 4, length: 5), (start: 18, length: 3)]
     )
     .frame(height: previewGridHeight)

@@ -24,7 +24,7 @@ struct CalendarMonth: Hashable {
     }
 
     var title: String {
-        start.formatted(.dateTime.month(.wide).year())
+        CalendarGrid.monthTitle(for: start)
     }
 
     /// Whether `date` falls within this month.

@@ -110,15 +110,13 @@ struct CalendarGridProvider<Kind: CalendarGridKind>: TimelineProvider {
 struct CalendarGridWidgetView: View {
     var entry: CalendarGridEntry
 
-    /// Whether to name the span above the grid. The Month widget does; the
-    /// 4 Weeks widget gives the row to the grid instead.
-    var showsTitle: Bool = true
-
     var body: some View {
         VStack(spacing: 2) {
-            if showsTitle {
+            // A span with no name of its own — a run of weeks — gives the row
+            // to the grid instead of heading it.
+            if let title = entry.grid.title {
                 HStack {
-                    Text(entry.grid.title)
+                    Text(title)
                         .font(.caption)
                         .fontWeight(.semibold)
                     Spacer()
@@ -150,55 +148,5 @@ struct CalendarGridWidgetView: View {
     }
 }
 
-/// Made-up events for the previews. `DayEvent` is a plain value, so this needs
-/// no event store — which the extension process can't create one of anyway.
-/// Days are picked by position in the grid, since a four-week span can cover
-/// the same day number twice.
-@MainActor
-func previewEvents(for grid: CalendarGrid) -> [Date: [DayEvent]] {
-    let palette: [(Color, Color)] = [
-        (Color(red: 0.00, green: 0.48, blue: 1.00), .white),
-        (Color(red: 1.00, green: 0.23, blue: 0.19), .white),
-        (Color(red: 1.00, green: 0.80, blue: 0.00), .black),
-    ]
-    let titles = ["Standup", "Design review", "Dentist"]
-    // A repeating run of per-day counts. Its length is coprime with seven, so
-    // no two weeks come out alike however many of them the grid shows.
-    let counts = [0, 2, 0, 5, 1, 0, 3, 0, 1, 4, 0]
-
-    var result: [Date: [DayEvent]] = [:]
-    for (index, day) in grid.days.enumerated() {
-        let count = counts[index % counts.count]
-        guard !grid.isDimmed(day), count > 0 else { continue }
-        result[day] = (0..<count).map { position in
-            let (color, titleColor) = palette[position % palette.count]
-            return DayEvent(
-                id: "\(index)-\(position)",
-                title: titles[position % titles.count],
-                start: day,
-                end: day,
-                color: color,
-                titleColor: titleColor
-            )
-        }
-    }
-
-    // One event covering several days, listed under each of them the way the
-    // real event store groups them, so the previews show a stretched bar.
-    let span = grid.days.prefix(5).suffix(4)
-    if let first = span.first, let last = span.last {
-        let trip = DayEvent(
-            id: "span",
-            title: "Berlin trip",
-            start: first,
-            end: last,
-            isAllDay: true,
-            color: Color(red: 0.20, green: 0.78, blue: 0.35),
-            titleColor: .black
-        )
-        for day in span {
-            result[day, default: []].append(trip)
-        }
-    }
-    return result
-}
+// The previews in this target build their events with `previewEvents(for:)`,
+// which lives beside the grid view it feeds.

@@ -13,7 +13,10 @@ import Foundation
 /// sense for months.
 struct CalendarGrid: Hashable {
     let calendar: Calendar
-    let title: String
+
+    /// What to call this span, or nil for one with no name of its own — a run
+    /// of weeks usually straddles two months.
+    let title: String?
 
     /// Row-major, and always a whole number of weeks.
     let days: [Date]
@@ -76,10 +79,16 @@ extension CalendarGrid {
 
         return CalendarGrid(
             calendar: calendar,
-            title: start.formatted(.dateTime.month(.wide).year()),
+            title: Self.monthTitle(for: start),
             days: days,
             dimmedDays: Set(dimmed)
         )
+    }
+
+    /// How a month is named wherever it's shown — the widget's heading and the
+    /// app's navigation title alike.
+    static func monthTitle(for start: Date) -> String {
+        start.formatted(.dateTime.month(.wide).year())
     }
 
     /// `count` whole weeks, beginning with the week that contains `date`.
@@ -93,16 +102,9 @@ extension CalendarGrid {
 
         return CalendarGrid(
             calendar: calendar,
-            title: Self.spanTitle(for: days),
+            title: nil,
             days: days,
             dimmedDays: []
         )
-    }
-
-    /// A run of weeks can straddle two months, so it's titled with its span
-    /// rather than a single month name.
-    private static func spanTitle(for days: [Date]) -> String {
-        guard let first = days.first, let last = days.last else { return "" }
-        return (first..<last).formatted(.interval.month(.abbreviated).day())
     }
 }

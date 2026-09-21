@@ -7,18 +7,17 @@ import SwiftUI
 import WidgetKit
 
 // The same grid as the Month widget, showing the current week and a varying
-// number of the weeks after it. None of them names its span the way the Month
-// widget does: a run of weeks often straddles two months, and the row is
-// better spent on the grid. Fewer weeks means taller rows, so each widget down
-// this list shows more of a busy day's events before collapsing the rest into
-// a "+n".
+// number of the weeks after it. None of them is headed the way the Month
+// widget is — a run of weeks has no name of its own, so the grid takes that
+// row. Fewer weeks means taller rows, so each widget down this list shows
+// more of a busy day's events before collapsing the rest into a "+n".
 
 struct FourWeeksWidget: Widget {
     let kind: String = "FourWeeksWidget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: CalendarGridProvider<FourWeeksGridKind>()) { entry in
-            CalendarGridWidgetView(entry: entry, showsTitle: false)
+            CalendarGridWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("4 Weeks")
@@ -32,7 +31,7 @@ struct ThreeWeeksWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: CalendarGridProvider<ThreeWeeksGridKind>()) { entry in
-            CalendarGridWidgetView(entry: entry, showsTitle: false)
+            CalendarGridWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("3 Weeks")
@@ -46,7 +45,7 @@ struct TwoWeeksWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: CalendarGridProvider<TwoWeeksGridKind>()) { entry in
-            CalendarGridWidgetView(entry: entry, showsTitle: false)
+            CalendarGridWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("2 Weeks")
@@ -62,7 +61,7 @@ struct OneWeekWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: CalendarGridProvider<OneWeekGridKind>()) { entry in
-            CalendarGridWidgetView(entry: entry, showsTitle: false)
+            CalendarGridWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("1 Week")
