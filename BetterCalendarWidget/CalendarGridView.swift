@@ -325,10 +325,10 @@ private struct EventBar: View {
 
     /// `DayEvent.titleColor` is chosen to read against the solid colour, which
     /// a washed-out bar no longer is — white on pale yellow is unreadable. A
-    /// faint bar takes the foreground colour instead, which suits both a light
-    /// and a dark widget.
+    /// faint bar titles itself in the calendar's own colour instead, matching
+    /// its stripe.
     private var titleColor: Color {
-        event.isAllDay ? event.titleColor : .primary
+        event.isAllDay ? event.titleColor : event.color
     }
 }
 
