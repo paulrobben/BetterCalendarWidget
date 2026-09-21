@@ -10,6 +10,9 @@ struct DayEventsView: View {
     let day: Date
     let events: [DayEvent]
 
+    /// Called when an event is tapped, to show its detail.
+    let onSelect: (DayEvent) -> Void
+
     var body: some View {
         List {
             Section {
@@ -18,7 +21,14 @@ struct DayEventsView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(events) { event in
-                        EventRow(event: event)
+                        Button {
+                            onSelect(event)
+                        } label: {
+                            EventRow(event: event)
+                        }
+                        // A plain button keeps the row looking like a row
+                        // rather than tinting its text.
+                        .buttonStyle(.plain)
                     }
                 }
             } header: {
@@ -56,9 +66,15 @@ private struct EventRow: View {
             }
 
             Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 4)
         .frame(minHeight: 44)
+        .contentShape(.rect)
         .accessibilityElement(children: .combine)
     }
 

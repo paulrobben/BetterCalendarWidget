@@ -119,6 +119,28 @@ final class CalendarEventStore {
         eventsByDay[calendar.startOfDay(for: day)] ?? []
     }
 
+    /// The live `EKEvent` a `DayEvent` was resolved from, which EventKit's own
+    /// detail view needs — `DayEvent` deliberately keeps no reference to one.
+    ///
+    /// Refetched over the day the event starts on and matched by `DayEvent.id`,
+    /// which pins the occurrence: recurring events share an identifier, so
+    /// looking one up by identifier alone can return the wrong date. Returns
+    /// nil for an event deleted since the grid was drawn.
+    func ekEvent(for dayEvent: DayEvent) -> EKEvent? {
+        guard access == .granted else { return nil }
+
+        let dayStart = calendar.startOfDay(for: dayEvent.start)
+        let visible = visibleCalendars
+        guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart),
+              !visible.isEmpty
+        else {
+            return nil
+        }
+
+        let predicate = store.predicateForEvents(withStart: dayStart, end: dayEnd, calendars: visible)
+        return store.events(matching: predicate).first { DayEvent($0).id == dayEvent.id }
+    }
+
     /// Reloads whenever the Calendar database changes underneath us — for
     /// example when the person edits an event in Apple's Calendar app.
     func observeStoreChanges() async {

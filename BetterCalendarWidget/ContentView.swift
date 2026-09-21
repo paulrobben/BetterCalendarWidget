@@ -5,6 +5,7 @@
 //  Created by Paul on 20.09.26.
 //
 
+import EventKit
 import SwiftUI
 
 struct ContentView: View {
@@ -14,6 +15,7 @@ struct ContentView: View {
     @State private var month = CalendarMonth(containing: .now)
     @State private var selectedDay = Calendar.current.startOfDay(for: .now)
     @State private var isShowingSettings = false
+    @State private var detailedEvent: DetailedEvent?
 
     var body: some View {
         NavigationStack {
@@ -87,8 +89,22 @@ struct ContentView: View {
 
             Divider()
 
-            DayEventsView(day: selectedDay, events: eventStore.events(on: selectedDay))
+            DayEventsView(
+                day: selectedDay,
+                events: eventStore.events(on: selectedDay),
+                onSelect: showDetail
+            )
         }
+        .sheet(item: $detailedEvent) { detailed in
+            EventDetailView(event: detailed.event) { detailedEvent = nil }
+        }
+    }
+
+    /// Shows EventKit's detail for a tapped event. Silently does nothing if the
+    /// event has been deleted since the day list was drawn.
+    private func showDetail(_ dayEvent: DayEvent) {
+        guard let event = eventStore.ekEvent(for: dayEvent) else { return }
+        detailedEvent = DetailedEvent(id: dayEvent.id, event: event)
     }
 
     /// Hands off to Apple's Calendar, which is where the person edits events —
@@ -163,6 +179,14 @@ struct ContentView: View {
 private struct LoadKey: Equatable {
     let monthStart: Date
     let access: CalendarAccess
+}
+
+/// The event whose detail is showing. `EKEvent` is a reference type with no
+/// identity `sheet(item:)` can use, so the `DayEvent` it came from lends its
+/// own — unique per occurrence.
+private struct DetailedEvent: Identifiable {
+    let id: String
+    let event: EKEvent
 }
 
 #Preview {
