@@ -44,33 +44,43 @@ struct CalendarSettingsView: View {
 
     private var calendarList: some View {
         List {
-            ForEach(groupedBySource, id: \.source) { group in
-                Section(group.source) {
-                    ForEach(group.options) { option in
-                        Toggle(isOn: visibility(of: option)) {
-                            Label {
-                                Text(option.title)
-                            } icon: {
-                                Circle()
-                                    .fill(option.color)
-                                    .frame(width: 10, height: 10)
-                            }
+            newEventSection
+
+            calendarsSection
+
+            aboutSection
+        }
+    }
+
+    /// Every calendar in one section, ordered by the account it comes from so
+    /// calendars from the same account stay together.
+    private var calendarsSection: some View {
+        Section {
+            ForEach(options) { option in
+                Toggle(isOn: visibility(of: option)) {
+                    Label {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(option.title)
+
+                            // The account, now that there are no longer a
+                            // section per account to say which is which.
+                            Text(option.sourceTitle)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
+                    } icon: {
+                        Circle()
+                            .fill(option.color)
+                            .frame(width: 10, height: 10)
                     }
                 }
             }
-
+        } header: {
+            Text("Calendars")
+        } footer: {
             if hiddenIdentifiers.count == options.count {
-                Section {
-                    Text("Every calendar is hidden, so the month is empty.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+                Text("Every calendar is hidden, so the month is empty.")
             }
-
-            newEventSection
-
-            aboutSection
         }
     }
 
@@ -135,13 +145,6 @@ struct CalendarSettingsView: View {
             return Image(systemName: "circle.fill")
         }
         return Image(uiImage: dot)
-    }
-
-    private var groupedBySource: [(source: String, options: [CalendarOption])] {
-        // `options` arrives sorted by source, so grouping keeps that order.
-        Dictionary(grouping: options, by: \.sourceTitle)
-            .map { (source: $0.key, options: $0.value) }
-            .sorted { $0.source.localizedCompare($1.source) == .orderedAscending }
     }
 
     private func visibility(of option: CalendarOption) -> Binding<Bool> {
