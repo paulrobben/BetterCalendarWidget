@@ -16,7 +16,7 @@ struct ContentView: View {
     @State private var selectedDay = Calendar.current.startOfDay(for: .now)
     @State private var isShowingSettings = false
     @State private var detailedEvent: DetailedEvent?
-    @State private var draftEvent: DraftEvent?
+    @State private var editedEvent: EditableEvent?
 
     var body: some View {
         NavigationStack {
@@ -95,15 +95,15 @@ struct ContentView: View {
             DayEventsView(
                 day: selectedDay,
                 events: eventStore.events(on: selectedDay),
-                onSelect: showDetail
+                onSelect: open
             )
         }
         .sheet(item: $detailedEvent) { detailed in
             EventDetailView(event: detailed.event) { detailedEvent = nil }
         }
-        .sheet(item: $draftEvent) { draft in
-            EventEditorView(event: draft.event, store: eventStore.writingStore) {
-                draftEvent = nil
+        .sheet(item: $editedEvent) { edited in
+            EventEditorView(event: edited.event, store: eventStore.writingStore) {
+                editedEvent = nil
             }
         }
     }
@@ -143,14 +143,23 @@ struct ContentView: View {
     /// current time. Nothing is written unless the person taps Add.
     private func addEvent() {
         guard let event = eventStore.draftEvent(on: selectedDay) else { return }
-        draftEvent = DraftEvent(event: event)
+        editedEvent = EditableEvent(event: event)
     }
 
-    /// Shows EventKit's detail for a tapped event. Silently does nothing if the
-    /// event has been deleted since the day list was drawn.
-    private func showDetail(_ dayEvent: DayEvent) {
+    /// Opens a tapped event in EventKit's editor, or in its read-only detail
+    /// when the event's calendar doesn't allow changes — a subscribed holiday
+    /// calendar can't be written to, so an editor there could never save.
+    ///
+    /// Silently does nothing if the event has been deleted since the day list
+    /// was drawn.
+    private func open(_ dayEvent: DayEvent) {
         guard let event = eventStore.ekEvent(for: dayEvent) else { return }
-        detailedEvent = DetailedEvent(id: dayEvent.id, event: event)
+
+        if event.calendar?.allowsContentModifications == true {
+            editedEvent = EditableEvent(event: event)
+        } else {
+            detailedEvent = DetailedEvent(id: dayEvent.id, event: event)
+        }
     }
 
     /// The month at the size it occupies as a 4x4 widget. Days cap their bars
@@ -213,17 +222,18 @@ private struct LoadKey: Equatable {
     let access: CalendarAccess
 }
 
-/// The event whose detail is showing. `EKEvent` is a reference type with no
-/// identity `sheet(item:)` can use, so the `DayEvent` it came from lends its
-/// own — unique per occurrence.
+/// The event whose read-only detail is showing. `EKEvent` is a reference type
+/// with no identity `sheet(item:)` can use, so the `DayEvent` it came from
+/// lends its own — unique per occurrence.
 private struct DetailedEvent: Identifiable {
     let id: String
     let event: EKEvent
 }
 
-/// The unsaved event the editor is filling in. A fresh id each time, so
-/// reopening the editor presents a new draft rather than reusing the last.
-private struct DraftEvent: Identifiable {
+/// The event open in the editor, whether new or tapped in the day list. A
+/// fresh id each time, so reopening the editor starts over rather than
+/// reusing the last one.
+private struct EditableEvent: Identifiable {
     let id = UUID()
     let event: EKEvent
 }
