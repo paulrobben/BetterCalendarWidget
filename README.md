@@ -4,19 +4,14 @@ This app provides some more widgets for those who want to use iOS native calenda
 
 ## Screenshots
 
-The events shown here are made up — they don't come from anyone's real calendar.
-
-### Widgets
-
-Five widgets, all drawing the same grid: Month, and then 4, 3, 2 and 1 weeks starting from the current week. Fewer weeks means taller rows, so each one fits more of a busy day's events before collapsing the rest into a `+n`. All-day events take their calendar's colour solid and stretch across the days they cover; events with a time are washed out with a stripe of the colour down the side.
+The app provides five widgets, all drawing the same grid: A month overview and a view with everything from the current week to the next 4 weeks.
 
 | Month | 4 Weeks | 1 Week (medium) |
 | --- | --- | --- |
 | <img src="Screenshots/widget-month.png" width="240"> | <img src="Screenshots/widget-4weeks.png" width="240"> | <img src="Screenshots/widget-1week-medium.png" width="240"> |
 
-### App
-
-The app shows the month at the size it occupies as a widget, the selected day's events below it, and a button that hands the day over to Apple's Calendar. Tapping an event opens EventKit's editor; Add Event creates one on the selected day at the current time. Settings picks which calendar new events go to, and which calendars appear at all.
+The app provides a simple month overview as well as the selected day's events below it. The interaction to the event works via Apples built-in EventKit.
+In the settings section, one can select the default calendar for new events (defaults to the system-default) as well as which calendars should be visible in the app and widgets.
 
 | App | Settings |
 | --- | --- |
