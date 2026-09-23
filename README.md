@@ -4,7 +4,7 @@ This app provides some more widgets for those who want to use iOS native calenda
 
 ## Screenshots
 
-The app provides five widgets, all drawing the same grid: A month overview and a view with everything from the current week to the next 4 weeks.
+The app provides five widgets, all drawing the same grid: A month overview and a 1 to 4 week view starting at the current week. The 2-week and week widget can be resized to medium, the rest of them are all large.
 
 | Month | 4 Weeks | 1 Week (medium) |
 | --- | --- | --- |
@@ -17,5 +17,8 @@ In the settings section, one can select the default calendar for new events (def
 | --- | --- |
 | <img src="Screenshots/app.png" width="260"> | <img src="Screenshots/settings.png" width="260"> |
 
-### Caution
-Beware: This is a vibe coded app. I'm no developer and certainly no Swift/iOS developer - I just needed this app for myself. Since I wasn't able to find a free and open source one, I figured this might be a good time to try out claude. I hope there's no dangerous code in here, but I can't guarantee anything! Use at your own risk. Forking and/or adding your own features welcome.
+## Caution
+Beware: This is a vibe coded app. I'm no developer and certainly no Swift/iOS developer - I just needed this app for myself. Since I wasn't able to find a free and open source one, I figured this might be a good time to try out claude. I hope there's no dangerous code in here and it seems to be rather simple due to the heavy lifting done by Apples. API, but I can't guarantee anything!
+Use at your own risk.  
+
+Forking and/or adding your own features welcome.
