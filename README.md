@@ -18,7 +18,7 @@ In the settings section, one can select the default calendar for new events (def
 | <img src="Screenshots/app.png" width="260"> | <img src="Screenshots/settings.png" width="260"> |
 
 ## Caution
-Beware: This is a vibe coded app. I'm no developer and certainly no Swift/iOS developer - I just needed this app for myself. Since I wasn't able to find a free and open source one, I figured this might be a good time to try out claude. I hope there's no dangerous code in here and it seems to be rather simple due to the heavy lifting done by Apples. API, but I can't guarantee anything!
+Beware: This is a vibe coded app. I'm no developer and certainly no Swift/iOS developer - I just needed this app for myself. Since I wasn't able to find a free and open source one, I figured this might be a good time to try out claude. I hope there's no dangerous code in here and it seems to be rather simple due to the heavy lifting done by Apples API, but I can't guarantee anything!
 Use at your own risk.  
 
 Forking and/or adding your own features welcome.
